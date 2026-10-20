@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asisten Akademik & Tugas UT - JawabDiskusi AI (Dengan Multi-File Modul & Anti-Deteksi AI)</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- PDF.js library for multi-PDF parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            ut: {
+              blue: '#003366',
+              navy: '#002244',
+              gold: '#FDB813',
+              yellow: '#FFCC00',
+              light: '#F4F7FA',
+              card: '#FFFFFF'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            academic: ['Times New Roman', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #F1F5F9;
+    }
+
+    /* Custom BJU Print Styling */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #bjuContainer, #bjuContainer * {
+        visibility: visible;
+      }
+      #bjuContainer {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 20px;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Drag & Drop File Zone Style */
+    .drop-zone--over {
+      border-color: #003366 !important;
+      background-color: #eff6ff !important;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col">
+
+  <!-- Top Navigation Header -->
+  <header class="bg-ut-blue text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-[1700px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 bg-ut-gold rounded-lg flex items-center justify-center text-ut-navy font-bold text-xl shadow">
+          UT
+        </div>
+        <div>
+          <h1 class="text-lg font-bold leading-tight flex items-center gap-2">
+            Asisten Akademik & Tugas UT
+            <span class="bg-amber-400 text-slate-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">PRO S1 SI</span>
+          </h1>
+          <p class="text-xs text-slate-200">Generator Tanggapan Tuton & Metopen Berbasis Multi-Modul BMP & Gemini AI</p>
+        </div>
+      </div>
+
+      <!-- Quick Actions & Status -->
+      <div class="flex items-center space-x-3 text-xs sm:text-sm">
+        <!-- API Key Status Indicator -->
+        <button onclick="openApiKeyModal()" id="apiKeyStatusBtn" class="flex items-center space-x-2 bg-slate-800/80 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-600 transition">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" id="apiKeyDot"></span>
+          <span id="apiKeyStatusText" class="font-medium">Cek API Key</span>
+        </button>
+
+        <!-- User Profile Quick View -->
+        <button onclick="openProfileModal()" class="flex items-center space-x-2 bg-ut-navy hover:bg-slate-900 px-3 py-1.5 rounded-lg border border-ut-gold/40 text-amber-300 font-medium transition">
+          <i class="fa-solid fa-user-graduate"></i>
+          <span id="navStudentName">LUKMAN NURHAKIM</span>
+        </button>
+
+        <!-- History Button -->
+        <button onclick="openHistoryModal()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg border border-slate-600 flex items-center gap-1.5 transition" title="Riwayat Draft Jawaban">
+          <i class="fa-solid fa-clock-rotate-left text-amber-400"></i>
+          <span class="hidden md:inline">Riwayat</span>
+          <span id="historyBadge" class="bg-amber-400 text-slate-900 font-bold text-[10px] px-1.5 py-0.2 rounded-full">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="max-w-[1700px] mx-auto px-4 sm:px-6 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+    
+    <!-- LEFT PANEL: Input & Form Configuration (5 Cols) -->
+    <section class="lg:col-span-5 flex flex-col gap-5">
+      
+      <!-- Quick Course Selector Chips -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+          <i class="fa-solid fa-bolt text-amber-500 mr-1"></i> Pilih Cepat Mata Kuliah Sistem Informasi (UT)
+        </label>
+        <div class="flex flex-wrap gap-1.5 text-xs">
+          <button onclick="setCourse('MSIM4301 - Analisis & Perancangan Sistem')" class="px-2.5 py-1 bg-slate-100 hover:bg-ut-blue hover:text-white rounded-md text-slate-700 font-medium transition border border-slate-200">MSIM4301 (APS)</button>
+          <button onclick="setCourse('MSIM4303 - Rekayasa Perangkat Lunak')" class="px-2.5 py-1 bg-slate-100 hover:bg-ut-blue hover:text-white rounded-md text-slate-700 font-medium transition border border-slate-200">MSIM4303 (RPL)</button>
+          <button onclick="setCourse('MSIM4304 - Basis Data')" class="px-2.5 py-1 bg-slate-100 hover:bg-ut-blue hover:text-white rounded-md text-slate-700 font-medium transition border border-slate-200">MSIM4304 (Basis Data)</button>
+          <button onclick="setCourse('MSIM4201 - Pemrograman Berbasis Desktop')" class="px-2.5 py-1 bg-slate-100 hover:bg-ut-blue hover:text-white rounded-md text-slate-700 font-medium transition border border-slate-200">MSIM4201 (Desktop)</button>
+          <button onclick="setCourse('MSIM4401 - Keamanan Sistem Informasi')" class="px-2.5 py-1 bg-slate-100 hover:bg-ut-blue hover:text-white rounded-md text-slate-700 font-medium transition border border-slate-200">MSIM4401 (Keamanan SI)</button>
+          <button onclick="setCourse('ISIP4211 - Logika')" class="px-2.5 py-1 bg-slate-100 hover:bg-ut-blue hover:text-white rounded-md text-slate-700 font-medium transition border border-slate-200">ISIP4211 (Logika)</button>
+          <button onclick="setCourse('MKWU4108 - Bahasa Indonesia')" class="px-2.5 py-1 bg-slate-100 hover:bg-ut-blue hover:text-white rounded-md text-slate-700 font-medium transition border border-slate-200">MKWU4108 (B. Indo)</button>
+        </div>
+      </div>
+
+      <!-- Tabbed Mode Input Container -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+        
+        <!-- Navigation Tabs -->
+        <div class="flex border-b border-slate-200 bg-slate-50 overflow-x-auto text-xs sm:text-sm font-semibold">
+          <button id="tabBtn-discussion" onclick="switchTab('discussion')" class="tab-btn px-4 py-3 text-ut-blue border-b-2 border-ut-blue bg-white flex items-center gap-2 whitespace-nowrap transition">
+            <i class="fa-solid fa-comments"></i> Diskusi Tuton
+          </button>
+          <button id="tabBtn-task" onclick="switchTab('task')" class="tab-btn px-4 py-3 text-slate-500 hover:text-ut-blue flex items-center gap-2 whitespace-nowrap transition">
+            <i class="fa-solid fa-file-pen"></i> Tugas Tuton
+          </button>
+          <button id="tabBtn-metopen" onclick="switchTab('metopen')" class="tab-btn px-4 py-3 text-slate-500 hover:text-ut-blue flex items-center gap-2 whitespace-nowrap transition">
+            <i class="fa-solid fa-graduation-cap"></i> Metopen / Proposal
+          </button>
+          <button id="tabBtn-modules" onclick="switchTab('modules')" class="tab-btn px-4 py-3 text-slate-500 hover:text-ut-blue flex items-center gap-2 whitespace-nowrap transition">
+            <i class="fa-solid fa-folder-open"></i> File Modul Pembantu
+            <span id="moduleCountBadge" class="bg-amber-400 text-slate-900 font-extrabold text-[10px] px-2 py-0.5 rounded-full">0 File</span>
+          </button>
+        </div>
+
+        <!-- TAB CONTENT AREA -->
+        <div class="p-5 space-y-4">
+
+          <!-- Shared Course Input -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mata Kuliah UT</label>
+            <input type="text" id="sharedCourseInput" oninput="updateBjuHeader()" value="MSIM4301 - Analisis & Perancangan Sistem" placeholder="Contoh: MSIM4301 - Analisis & Perancangan Sistem" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none">
+          </div>
+
+          <!-- Active Attached Files Quick Indicator Banner -->
+          <div id="activeFilesBanner" onclick="switchTab('modules')" class="bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg p-2.5 text-xs text-amber-900 flex items-center justify-between cursor-pointer transition">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-file-pdf text-amber-600 text-base"></i>
+              <div>
+                <strong id="activeFilesBannerText">0 File Modul Pembantu Terpasang</strong>
+                <p class="text-[10px] text-amber-700">Setiap file pembantu yang diunggah akan dijadikan rujukan utama AI.</p>
+              </div>
+            </div>
+            <span class="text-[11px] font-bold text-ut-blue hover:underline whitespace-nowrap"><i class="fa-solid fa-plus mr-1"></i>Kelola File</span>
+          </div>
+
+          <!-- TAB 1: DISKUSI TUTON -->
+          <div id="tabContent-discussion" class="tab-content space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Sesi Tuton</label>
+                <select id="discSessionSelect" onchange="updateBjuHeader()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none">
+                  <option value="Sesi 1">Sesi 1</option>
+                  <option value="Sesi 2">Sesi 2</option>
+                  <option value="Sesi 3">Sesi 3</option>
+                  <option value="Sesi 4">Sesi 4</option>
+                  <option value="Sesi 5">Sesi 5</option>
+                  <option value="Sesi 6">Sesi 6</option>
+                  <option value="Sesi 7">Sesi 7</option>
+                  <option value="Sesi 8">Sesi 8</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Gaya Sapaan Resmi</label>
+                <select id="discGreetingSelect" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none">
+                  <option value="default">Sapaan Tuton Standar UT (Lukman Nurhakim)</option>
+                  <option value="formal">Sapaan Formal Akademis</option>
+                  <option value="friendly">Sapaan Diskusi Interaktif</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <label class="block text-xs font-bold text-slate-700 uppercase">Pertanyaan / Soal Diskusi LMS</label>
+                <button onclick="toggleExpandTextarea('discTaskInput')" class="text-xs text-ut-blue hover:underline"><i class="fa-solid fa-expand mr-1"></i> Perbesar</button>
+              </div>
+              <textarea id="discTaskInput" rows="5" placeholder="Tempelkan (paste) soal diskusi dari LMS UT di sini..." class="w-full p-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none font-sans leading-relaxed"></textarea>
+            </div>
+          </div>
+
+          <!-- TAB 2: TUGAS TUTON -->
+          <div id="tabContent-task" class="tab-content hidden space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nomor Tugas</label>
+                <select id="taskNumberSelect" onchange="updateBjuHeader()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none">
+                  <option value="Tugas 1">Tugas 1 (Sesi 3)</option>
+                  <option value="Tugas 2">Tugas 2 (Sesi 5)</option>
+                  <option value="Tugas 3">Tugas 3 (Sesi 7)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Format Pembahasan</label>
+                <select id="taskFormatSelect" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none">
+                  <option value="pembahasan_poin">Poin demi Poin Terstruktur + Studi Kasus</option>
+                  <option value="makalah">Format Makalah Singkat (Pendahuluan-Isi-Penutup)</option>
+                  <option value="analisis_sistem">Analisis Diagram / DFD / Use Case / ERD Naratif</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <label class="block text-xs font-bold text-slate-700 uppercase">Instruksi & Soal Tugas Utama</label>
+                <button onclick="toggleExpandTextarea('taskInstructionsInput')" class="text-xs text-ut-blue hover:underline"><i class="fa-solid fa-expand mr-1"></i> Perbesar</button>
+              </div>
+              <textarea id="taskInstructionsInput" rows="6" placeholder="Salin lengkap instruksi soal Tugas 1/2/3 beserta petunjuk pengerjaannya..." class="w-full p-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none font-sans leading-relaxed"></textarea>
+            </div>
+          </div>
+
+          <!-- TAB 3: METOPEN & PROPOSAL -->
+          <div id="tabContent-metopen" class="tab-content hidden space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Topik / Judul Proposal Penelitian SI</label>
+              <input type="text" id="metopenTopicInput" placeholder="Contoh: Evaluasi Penerimaan SIMRS Menggunakan Metode UTAUT 2 di RSUD Garut" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Fokus Bagian</label>
+                <select id="metopenSectionSelect" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none">
+                  <option value="lengkap">Draf Proposal Ringkas (Bab 1, 2, 3)</option>
+                  <option value="bab1">Bab 1: Latar Belakang & Rumusan Masalah</option>
+                  <option value="bab2">Bab 2: Tinjauan Pustaka & Hipotesis</option>
+                  <option value="bab3">Bab 3: Metodologi Penelitian & Teknik Sampling</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Pendekatan</label>
+                <select id="metopenTypeSelect" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none">
+                  <option value="kuantitatif">Kuantitatif (Survei / TAM / UTAUT)</option>
+                  <option value="kualitatif">Kualitatif (Studi Kasus / Analisis Kebutuhan)</option>
+                  <option value="pengembangan">R&D / Waterfall / Agile Software Dev</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Catatan Tambahan / Objek Penelitian</label>
+              <textarea id="metopenNotesInput" rows="3" placeholder="Masukkan detail lokasi penelitian, jumlah sampel target, atau variabel utama..." class="w-full p-3 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none"></textarea>
+            </div>
+          </div>
+
+          <!-- TAB 4: MODUL BMP & FILE PEMBANTU (Multi-File Extraction & Management) -->
+          <div id="tabContent-modules" class="tab-content hidden space-y-4">
+            
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-700 space-y-1">
+              <div class="flex items-center gap-1.5 font-bold text-ut-blue">
+                <i class="fa-solid fa-layer-group text-amber-500"></i> Multi-File Reader Modul BMP & Dokumen Pembantu
+              </div>
+              <p>Unggah atau pilih beberapa file PDF modul UT, catatan ringkasan, atau referensi jurnal sekaligus. Teks dari file aktif akan digabungkan secara otomatis sebagai rujukan presisi saat men-generate jawaban.</p>
+            </div>
+
+            <!-- Drag & Drop Upload Container -->
+            <div id="dropZone" class="border-2 border-dashed border-slate-300 rounded-xl p-5 text-center bg-slate-50 hover:bg-slate-100/80 transition cursor-pointer relative">
+              <input type="file" id="pdfFileInput" accept=".pdf,.txt,.md,.docx" multiple onchange="handleFileUpload(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+              <div class="space-y-2 pointer-events-none">
+                <div class="w-12 h-12 bg-ut-blue/10 text-ut-blue rounded-full flex items-center justify-center mx-auto">
+                  <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-slate-800">Klik atau Tarik File ke Sini (Bisa Banyak File)</p>
+                  <p class="text-[11px] text-slate-500">Mendukung format PDF, TXT, MD. (Maksimal 10 MB per file)</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Add Preset Samples Button Row -->
+            <div class="flex items-center justify-between pt-1">
+              <span class="text-xs font-bold text-slate-600">Tambah Preset Modul Contoh:</span>
+              <div class="flex gap-1.5 text-xs">
+                <button onclick="addPresetModule('MSIM4301')" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded text-[11px] transition">+ BMP MSIM4301</button>
+                <button onclick="addPresetModule('MSIM4303')" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded text-[11px] transition">+ BMP MSIM4303</button>
+                <button onclick="addPresetModule('UU_PDP')" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded text-[11px] transition">+ UU PDP No 27/2022</button>
+              </div>
+            </div>
+
+            <!-- List of Attached Files -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
+                  <i class="fa-solid fa-list-check text-emerald-600"></i> Daftar File Pembantu Terpasang
+                  <span id="fileCountBadge" class="bg-ut-blue text-white text-[10px] px-2 py-0.2 rounded-full font-bold">0 File</span>
+                </span>
+                <button onclick="clearAllModuleFiles()" class="text-xs text-red-600 hover:underline"><i class="fa-solid fa-trash-can mr-1"></i> Hapus Semua File</button>
+              </div>
+
+              <!-- File Items Wrapper -->
+              <div id="attachedFilesList" class="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                <!-- Empty State Message -->
+                <div id="emptyFilesNotice" class="text-center py-8 bg-slate-50 border border-dashed border-slate-200 rounded-lg text-xs text-slate-400">
+                  <i class="fa-solid fa-folder-open text-3xl mb-2 text-slate-300"></i>
+                  <p>Belum ada file modul/pembantu yang diunggah.</p>
+                  <p class="text-[11px] text-slate-400">Gunakan tombol unggah di atas atau pilih preset modul contoh.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Humanizer, Anti-AI Detection & Reference Settings -->
+          <div class="pt-3 border-t border-slate-200 bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <i class="fa-solid fa-shield-cat text-emerald-600 text-sm"></i> Engine Anti-Deteksi AI & Persona Mahasiswa
+              </span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="humanizerToggle" checked class="sr-only peer">
+                <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+              </label>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div>
+                <label class="block text-slate-700 mb-1 font-semibold">Tingkat Penjelas & Perplexity AI</label>
+                <select id="aiIntensitySelect" class="w-full p-2 border border-slate-300 rounded bg-white focus:outline-none font-medium">
+                  <option value="ultra_human">Ultra-Human (< 15% Deteksi AI / Burstiness Tinggi)</option>
+                  <option value="balanced" selected>Seimbang (Natural Akademis ~ 25% Deteksi)</option>
+                  <option value="academic_strict">Formal Akademis Murni (Baku BMP UT)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-slate-700 mb-1 font-semibold">Pengayaan Sitasi & Referensi</label>
+                <select id="enrichmentSelect" class="w-full p-2 border border-slate-300 rounded bg-white focus:outline-none font-medium">
+                  <option value="bmp_uu">BMP UT + Citasi UU ITE (2024) / UU PDP</option>
+                  <option value="bmp_studi_kasus">BMP UT + Kasus Industri SI / IT Indonesia</option>
+                  <option value="bmp_iso">BMP UT + Standar ISO 27001 / COBIT / IEEE</option>
+                  <option value="murni_bmp">Fokus Utama Doktrin Teori BMP UT</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+              <label class="inline-flex items-center cursor-pointer text-xs font-medium text-slate-700">
+                <input type="checkbox" id="includeBibliographyToggle" checked class="rounded border-slate-300 text-ut-blue focus:ring-ut-blue h-4 w-4 mr-2">
+                Sertakan Daftar Pustaka (APA 7th Edition) Otomatis
+              </label>
+            </div>
+          </div>
+
+          <!-- GENERATE BUTTON -->
+          <button id="generateBtn" onclick="generateAIResponse()" class="w-full py-3 px-4 bg-gradient-to-r from-ut-blue to-ut-navy hover:from-slate-900 hover:to-ut-blue text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 group">
+            <i class="fa-solid fa-wand-magic-sparkles text-amber-400 group-hover:rotate-12 transition-transform"></i>
+            <span>GENERATE DRAF JAWABAN (FORMAT UT)</span>
+          </button>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: KOP BJU UT Sheet & Output Preview (7 Cols) -->
+    <section class="lg:col-span-7 flex flex-col gap-4">
+      
+      <!-- Preview Header Toolbar -->
+      <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center space-x-2">
+          <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+          <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Preview Lembar Jawaban BJU Resmi UT</h2>
+        </div>
+
+        <div class="flex items-center space-x-2 text-xs flex-wrap gap-y-2">
+          <button onclick="analyzeAiDetection()" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-lg border border-emerald-300 flex items-center gap-1.5 transition" title="Analisis Skor Deteksi AI">
+            <i class="fa-solid fa-chart-pie text-emerald-600"></i> Cek Skor AI
+          </button>
+          <button onclick="copyGeneratedText()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg border border-slate-300 flex items-center gap-1.5 transition">
+            <i class="fa-regular fa-copy text-ut-blue"></i> Salin
+          </button>
+          <button onclick="exportWord()" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg border border-blue-300 flex items-center gap-1.5 transition">
+            <i class="fa-regular fa-file-word text-blue-600"></i> Word
+          </button>
+          <button onclick="printBju()" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold rounded-lg border border-amber-300 flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-print text-amber-600"></i> Cetak/PDF
+          </button>
+          <button onclick="saveCurrentDraftManually()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-amber-300 font-semibold rounded-lg flex items-center gap-1.5 transition" title="Simpan ke Riwayat">
+            <i class="fa-solid fa-bookmark"></i> Simpan
+          </button>
+        </div>
+      </div>
+
+      <!-- BJU PAPER CANVAS SHEET -->
+      <div id="bjuContainer" class="bg-white rounded-xl shadow-md border border-slate-300 p-6 sm:p-8 flex-1 flex flex-col min-h-[650px] relative font-academic">
+        
+        <!-- OFFICIAL UT BJU HEADER TABLE -->
+        <div class="border-2 border-ut-blue mb-6 rounded-sm overflow-hidden text-slate-900 text-xs sm:text-sm">
+          <!-- Top Header Title -->
+          <div class="bg-ut-blue text-white px-4 py-2 font-bold text-center uppercase tracking-wider text-sm flex items-center justify-between">
+            <span class="text-amber-300 text-xs">UNIVERSITAS TERBUKA</span>
+            <span>BUKU JAWABAN UJIAN / TUGAS / DISKUSI TUTON</span>
+            <span class="text-amber-300 text-xs" id="bjuMasaUjian">2026/2027 GANJIL</span>
+          </div>
+
+          <!-- Student & Course Details Table Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-ut-blue bg-slate-50">
+            <!-- Left Info Column -->
+            <div class="p-3 space-y-1.5">
+              <div class="flex"><span class="w-32 font-bold text-slate-700">Nama Mahasiswa</span>: <span id="dispName" class="font-bold text-ut-navy uppercase ml-1">LUKMAN NURHAKIM</span></div>
+              <div class="flex"><span class="w-32 font-bold text-slate-700">NIM</span>: <span id="dispNim" class="font-mono font-bold ml-1">059027883</span></div>
+              <div class="flex"><span class="w-32 font-bold text-slate-700">Program Studi</span>: <span id="dispProdi" class="ml-1">SISTEM INFORMASI (FST)</span></div>
+              <div class="flex"><span class="w-32 font-bold text-slate-700">UPBJJ - UT</span>: <span id="dispUpbjj" class="ml-1">24 / GARUT</span></div>
+            </div>
+
+            <!-- Right Info Column -->
+            <div class="p-3 space-y-1.5">
+              <div class="flex"><span class="w-32 font-bold text-slate-700">Mata Kuliah</span>: <span id="bjuCourse" class="font-bold text-ut-navy ml-1">MSIM4301 - Analisis & Perancangan Sistem</span></div>
+              <div class="flex"><span class="w-32 font-bold text-slate-700">Sesi / Tugas</span>: <span id="bjuSession" class="font-semibold ml-1">Sesi 1</span></div>
+              <div class="flex"><span class="w-32 font-bold text-slate-700">Tanggal Akses</span>: <span id="bjuDate" class="ml-1">12 Oktober 2026</span></div>
+              <div class="flex"><span class="w-32 font-bold text-slate-700">Status Penulisan</span>: <span class="ml-1 text-emerald-700 font-semibold flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> Mahasiswa Organik (Multi-Modul & Anti-AI)</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GENERATED ANSWER CONTENT AREA (Editable Div) -->
+        <div id="outputAnswerArea" contenteditable="true" class="flex-1 text-slate-900 text-sm sm:text-base leading-relaxed p-2 focus:outline-none focus:ring-1 focus:ring-ut-blue rounded min-h-[400px]">
+          <div class="text-center py-16 text-slate-400 font-sans space-y-3">
+            <i class="fa-solid fa-feather-pointed text-4xl text-slate-300 animate-bounce"></i>
+            <p class="font-medium">Hasil draf jawaban terstruktur beserta referensi modul akan muncul di sini.</p>
+            <p class="text-xs text-slate-400">Pilih mata kuliah, unggah modul pembantu jika ada, lalu klik <span class="text-ut-blue font-bold">Generate Draf Jawaban</span>.</p>
+          </div>
+        </div>
+
+        <!-- Footnote Disclaimer -->
+        <div class="mt-6 pt-3 border-t border-slate-200 text-[11px] text-slate-500 flex flex-wrap justify-between items-center font-sans no-print">
+          <span><i class="fa-solid fa-shield-halved text-emerald-600"></i> Format Diselaraskan dengan Standar Buku Jawaban Ujian (BJU) UT.</span>
+          <span>Sistem Informasi - Fakultas Sains dan Teknologi</span>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- MODALS -->
+  
+  <!-- MODAL 1: API KEY MODAL -->
+  <div id="apiKeyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-key text-amber-500"></i> Pengaturan API Key Gemini
+        </h3>
+        <button onclick="closeApiKeyModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      
+      <p class="text-xs text-slate-600 mb-4 leading-relaxed">
+        Aplikasi ini menggunakan Google Gemini API untuk memproses draf jawaban secara cepat dan akurat. Masukkan API Key Anda dari Google AI Studio.
+      </p>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Gemini API Key</label>
+          <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." class="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none font-mono">
+        </div>
+
+        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-600 space-y-1">
+          <p class="font-semibold text-slate-700"><i class="fa-solid fa-lock text-emerald-600"></i> Privasi Terjamin:</p>
+          <p>API Key Anda disimpan secara lokal di peramban (localStorage) dan tidak dikirim ke server pihak ketiga manapun.</p>
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end space-x-2">
+        <button onclick="closeApiKeyModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
+        <button onclick="saveApiKey()" class="px-4 py-2 text-xs font-bold bg-ut-blue hover:bg-ut-navy text-white rounded-lg shadow">Simpan Key</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: USER PROFILE MODAL -->
+  <div id="profileModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-user-graduate text-ut-blue"></i> Profil Identitas Mahasiswa UT
+        </h3>
+        <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 uppercase mb-1">Nama Lengkap Mahasiswa</label>
+          <input type="text" id="editName" value="LUKMAN NURHAKIM" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none uppercase font-semibold">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 uppercase mb-1">NIM (Nomor Induk Mahasiswa)</label>
+          <input type="text" id="editNim" value="059027883" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none font-mono font-bold">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 uppercase mb-1">Program Studi</label>
+          <input type="text" id="editProdi" value="SISTEM INFORMASI" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 uppercase mb-1">Fakultas</label>
+            <input type="text" id="editFakultas" value="FAKULTAS SAINS DAN TEKNOLOGI (FST)" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 uppercase mb-1">UPBJJ UT</label>
+            <input type="text" id="editUpbjj" value="GARUT" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-ut-blue focus:outline-none uppercase">
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end space-x-2">
+        <button onclick="closeProfileModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
+        <button onclick="saveProfile()" class="px-4 py-2 text-xs font-bold bg-ut-blue hover:bg-ut-navy text-white rounded-lg shadow">Perbarui Profil</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: HISTORY DRAFTS MODAL -->
+  <div id="historyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 border border-slate-200 flex flex-col max-h-[85vh]">
+      <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-200">
+        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left text-amber-500"></i> Riwayat Draft Jawaban Tersimpan
+        </h3>
+        <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div id="historyListContainer" class="flex-1 overflow-y-auto space-y-3 pr-1">
+        <!-- History items rendered dynamically -->
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-slate-200 flex justify-between items-center">
+        <button onclick="clearAllHistory()" class="text-xs text-red-600 hover:underline font-medium"><i class="fa-solid fa-trash-can mr-1"></i> Hapus Semua Riwayat</button>
+        <button onclick="closeHistoryModal()" class="px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-lg">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: AI DETECTION DETECTOR REPORT MODAL -->
+  <div id="aiDetectorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 flex flex-col space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-shield-cat text-emerald-600"></i> Analisis Deteksi AI & Metrik Humanizer
+        </h3>
+        <button onclick="closeAiDetectorModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <!-- Meter Gauge -->
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center space-y-2">
+        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Estimasi Probabilitas AI Detector</p>
+        <div class="text-4xl font-extrabold" id="aiScoreValue">12%</div>
+        <p id="aiScoreBadge" class="inline-block text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">Sangat Aman (Lolos AI Detector)</p>
+        <p class="text-[11px] text-slate-500 leading-normal pt-1">
+          Draf tulisan dianalisis berdasarkan variansi struktur kalimat (*burstiness*), keberagaman kata (*perplexity*), serta keberadaan sitasi referensi BMP UT.
+        </p>
+      </div>
+
+      <!-- Breakdown Metrics -->
+      <div class="space-y-2.5 text-xs">
+        <div class="flex justify-between items-center p-2 bg-slate-100 rounded">
+          <span class="text-slate-600 font-medium"><i class="fa-solid fa-align-left text-ut-blue mr-1"></i> Total Kata / Paragraf</span>
+          <span id="metricWordCount" class="font-bold text-slate-800">320 Kata / 4 Paragraf</span>
+        </div>
+        <div class="flex justify-between items-center p-2 bg-slate-100 rounded">
+          <span class="text-slate-600 font-medium"><i class="fa-solid fa-user-pen text-emerald-600 mr-1"></i> Sudut Pandang Orang Pertama ("Saya")</span>
+          <span id="metricFirstPerson" class="font-bold text-emerald-700">Tercakup (Gaya Organik)</span>
+        </div>
+        <div class="flex justify-between items-center p-2 bg-slate-100 rounded">
+          <span class="text-slate-600 font-medium"><i class="fa-solid fa-book-bookmark text-amber-600 mr-1"></i> Sitasi & Daftar Pustaka</span>
+          <span id="metricCitation" class="font-bold text-emerald-700">Terdeteksi (BMP UT + APA)</span>
+        </div>
+        <div class="flex justify-between items-center p-2 bg-slate-100 rounded">
+          <span class="text-slate-600 font-medium"><i class="fa-solid fa-filter text-indigo-600 mr-1"></i> Frasa Klise AI Generator</span>
+          <span id="metricCliche" class="font-bold text-emerald-700">0 Frasa Terdeteksi</span>
+        </div>
+      </div>
+
+      <div class="mt-2 text-end">
+        <button onclick="closeAiDetectorModal()" class="px-4 py-2 text-xs font-bold bg-ut-blue hover:bg-ut-navy text-white rounded-lg">Tutup Analisis</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: FILE TEXT PREVIEW MODAL -->
+  <div id="filePreviewModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 border border-slate-200 flex flex-col max-h-[85vh]">
+      <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-200">
+        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-file-lines text-ut-blue"></i> Preview Teks Ekstraksi Modul
+        </h3>
+        <button onclick="closeFilePreviewModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <p id="previewFileName" class="text-xs font-bold text-ut-navy mb-2"></p>
+      <div class="flex-1 bg-slate-50 p-3 rounded-lg border border-slate-200 overflow-y-auto">
+        <pre id="previewFileContent" class="text-xs font-mono text-slate-700 whitespace-pre-wrap leading-relaxed"></pre>
+      </div>
+
+      <div class="mt-4 flex justify-end">
+        <button onclick="closeFilePreviewModal()" class="px-4 py-2 text-xs font-bold bg-ut-blue text-white rounded-lg">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    /* GLOBAL APPLICATION STATE */
+    let currentTab = 'discussion';
+    let userProfile = {
+      name: 'LUKMAN NURHAKIM',
+      nim: '059027883',
+      prodi: 'SISTEM INFORMASI',
+      fakultas: 'FAKULTAS SAINS DAN TEKNOLOGI (FST)',
+      upbjj: 'GARUT'
+    };
+    let draftHistory = [];
+    let attachedModules = []; // Holds list of loaded reference files: { id, name, size, type, text, active: true, pages }
+
+    /* INITIALIZATION ON WINDOW LOAD */
+    window.onload = function() {
+      loadProfileFromStorage();
+      loadApiKeyFromStorage();
+      loadHistoryFromStorage();
+      setupDragAndDrop();
+      updateProfileUI();
+      updateBjuHeader();
+      setCurrentDate();
+      renderAttachedFilesList();
+    };
+
+    function setCurrentDate() {
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('bjuDate').innerText = new Date().toLocaleDateString('id-ID', options);
+    }
+
+    /* PROFILE MANAGEMENT */
+    function loadProfileFromStorage() {
+      const saved = localStorage.getItem('ut_user_profile');
+      if (saved) {
+        try { userProfile = JSON.parse(saved); } catch(e){}
+      }
+    }
+
+    function saveProfile() {
+      userProfile.name = document.getElementById('editName').value.trim() || 'LUKMAN NURHAKIM';
+      userProfile.nim = document.getElementById('editNim').value.trim() || '059027883';
+      userProfile.prodi = document.getElementById('editProdi').value.trim() || 'SISTEM INFORMASI';
+      userProfile.fakultas = document.getElementById('editFakultas').value.trim() || 'FAKULTAS SAINS DAN TEKNOLOGI (FST)';
+      userProfile.upbjj = document.getElementById('editUpbjj').value.trim() || 'GARUT';
+
+      localStorage.setItem('ut_user_profile', JSON.stringify(userProfile));
+      updateProfileUI();
+      closeProfileModal();
+      showToast('Profil mahasiswa berhasil diperbarui!');
+    }
+
+    function updateProfileUI() {
+      document.getElementById('navStudentName').innerText = userProfile.name;
+      document.getElementById('dispName').innerText = userProfile.name;
+      document.getElementById('dispNim').innerText = userProfile.nim;
+      document.getElementById('dispProdi').innerText = userProfile.prodi + " (FST)";
+      document.getElementById('dispUpbjj').innerText = "24 / " + userProfile.upbjj;
+    }
+
+    function openProfileModal() {
+      document.getElementById('editName').value = userProfile.name;
+      document.getElementById('editNim').value = userProfile.nim;
+      document.getElementById('editProdi').value = userProfile.prodi;
+      document.getElementById('editFakultas').value = userProfile.fakultas;
+      document.getElementById('editUpbjj').value = userProfile.upbjj;
+      document.getElementById('profileModal').classList.remove('hidden');
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.add('hidden');
+    }
+
+    /* BJU HEADER SYNC FUNCTION */
+    function updateBjuHeader() {
+      const course = document.getElementById('sharedCourseInput').value || 'MSIM4301 - Analisis & Perancangan Sistem';
+      let sessionText = 'Sesi 1';
+
+      if (currentTab === 'discussion') {
+        sessionText = document.getElementById('discSessionSelect').value;
+      } else if (currentTab === 'task') {
+        sessionText = document.getElementById('taskNumberSelect').value;
+      } else if (currentTab === 'metopen') {
+        sessionText = 'Metode Penelitian';
+      }
+
+      document.getElementById('bjuCourse').innerText = course;
+      document.getElementById('bjuSession').innerText = sessionText;
+    }
+
+    /* TAB SWITCHING */
+    function switchTab(tabName) {
+      currentTab = tabName;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('text-ut-blue', 'border-b-2', 'border-ut-blue', 'bg-white');
+        btn.classList.add('text-slate-500');
+      });
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+
+      document.getElementById(`tabBtn-${tabName}`).classList.add('text-ut-blue', 'border-b-2', 'border-ut-blue', 'bg-white');
+      document.getElementById(`tabBtn-${tabName}`).classList.remove('text-slate-500');
+      document.getElementById(`tabContent-${tabName}`).classList.remove('hidden');
+
+      updateBjuHeader();
+    }
+
+    function setCourse(courseName) {
+      document.getElementById('sharedCourseInput').value = courseName;
+      updateBjuHeader();
+      showToast(`Mata Kuliah diset: ${courseName}`);
+    }
+
+    function toggleExpandTextarea(id) {
+      const el = document.getElementById(id);
+      if (el.rows === 5 || el.rows === 6) {
+        el.rows = 14;
+      } else {
+        el.rows = 5;
+      }
+    }
+
+    /* API KEY MANAGEMENT */
+    function loadApiKeyFromStorage() {
+      const key = localStorage.getItem('ut_gemini_api_key');
+      const dot = document.getElementById('apiKeyDot');
+      const statusText = document.getElementById('apiKeyStatusText');
+
+      if (key && key.length > 5) {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400";
+        statusText.innerText = "API Key Aktif";
+      } else {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse";
+        statusText.innerText = "Set API Key";
+      }
+    }
+
+    function openApiKeyModal() {
+      const key = localStorage.getItem('ut_gemini_api_key') || '';
+      document.getElementById('geminiApiKeyInput').value = key;
+      document.getElementById('apiKeyModal').classList.remove('hidden');
+    }
+
+    function closeApiKeyModal() {
+      document.getElementById('apiKeyModal').classList.add('hidden');
+    }
+
+    function saveApiKey() {
+      const key = document.getElementById('geminiApiKeyInput').value.trim();
+      if (key) {
+        localStorage.setItem('ut_gemini_api_key', key);
+        showToast('API Key Gemini berhasil disimpan!');
+      } else {
+        localStorage.removeItem('ut_gemini_api_key');
+        showToast('API Key dikosongkan. Menggunakan runtime bawaan.', 'warning');
+      }
+      loadApiKeyFromStorage();
+      closeApiKeyModal();
+    }
+
+    /* MULTI-FILE MODULE UPLOAD & MANAGEMENT LOGIC */
+    function setupDragAndDrop() {
+      const dropZone = document.getElementById('dropZone');
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          dropZone.classList.add('drop-zone--over');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          dropZone.classList.remove('drop-zone--over');
+        }, false);
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files && files.length > 0) {
+          processMultipleFiles(files);
+        }
+      });
+    }
+
+    async function handleFileUpload(event) {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+      await processMultipleFiles(files);
+      event.target.value = ''; // Reset input
+    }
+
+    async function processMultipleFiles(files) {
+      showToast(`Memproses ${files.length} file pembantu...`);
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        let fileText = '';
+        let pageCount = 1;
+
+        try {
+          if (file.type === "application/pdf" || file.name.endsWith('.pdf')) {
+            const pdfData = await readPdfFile(file);
+            fileText = pdfData.text;
+            pageCount = pdfData.numPages;
+          } else {
+            fileText = await file.text();
+          }
+
+          const fileItem = {
+            id: Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            name: file.name,
+            size: formatBytes(file.size),
+            type: file.name.split('.').pop().toUpperCase(),
+            text: fileText,
+            pages: pageCount,
+            active: true
+          };
+
+          attachedModules.push(fileItem);
+        } catch (err) {
+          console.error(`Gagal membaca file ${file.name}:`, err);
+          showToast(`Gagal membaca ${file.name}`, 'warning');
+        }
+      }
+
+      renderAttachedFilesList();
+      showToast(`Berhasil menambahkan ${files.length} file modul.`);
+    }
+
+    function readPdfFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async function() {
+          try {
+            const typedarray = new Uint8Array(this.result);
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+            let fullText = '';
+            for (let pageNum = 1; pageNum <= Math.min(pdf.numPages, 15); pageNum++) {
+              const page = await pdf.getPage(pageNum);
+              const textContent = await page.getTextContent();
+              const pageText = textContent.items.map(item => item.str).join(' ');
+              fullText += `[Halaman ${pageNum}]\n` + pageText + '\n\n';
+            }
+            resolve({ text: fullText, numPages: pdf.numPages });
+          } catch(err) {
+            reject(err);
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    function addPresetModule(presetType) {
+      let presetItem = {};
+
+      if (presetType === 'MSIM4301') {
+        presetItem = {
+          id: 'preset_' + Date.now(),
+          name: 'Modul BMP MSIM4301 - Ringkasan Analisis & Perancangan Sistem UT.txt',
+          size: '18 KB',
+          type: 'TXT (Preset)',
+          pages: 6,
+          text: `--- RUJUKAN RESMI BMP UT MSIM4301 ANALISIS DAN PERANCANGAN SISTEM ---
+MODUL 1: Konsep Dasar Sistem Informasi & Siklus Hidup Pengembangan Sistem (SDLC)
+- Sistem Informasi adalah kombinasi dari teknologi informasi dan aktivitas orang-orang yang menggunakan teknologi itu untuk mendukung operasi dan manajemen.
+- Komponen Sistem: Input, Proses, Output, Feedbacks, Control, Environment.
+- SDLC: Perencanaan, Analisis, Perancangan (Design), Implementasi, Pemeliharaan.
+
+MODUL 2: Pemodelan Terstruktur (DFD & ERD)
+- Data Flow Diagram (DFD): Context Diagram, DFD Level 0, DFD Level 1. Komponen: External Entity, Process, Data Store, Data Flow.
+- Entity Relationship Diagram (ERD): Entitas, Atribut, Relasi (1:1, 1:N, N:M), Primary Key, Foreign Key.
+
+MODUL 3: Pemodelan Berorientasi Objek (UML - Unified Modeling Language)
+- Use Case Diagram: Actor, Use Case, Include, Extend.
+- Activity Diagram, Sequence Diagram, Class Diagram.`,
+          active: true
+        };
+      } else if (presetType === 'MSIM4303') {
+        presetItem = {
+          id: 'preset_' + Date.now(),
+          name: 'Modul BMP MSIM4303 - Ringkasan Rekayasa Perangkat Lunak UT.txt',
+          size: '15 KB',
+          type: 'TXT (Preset)',
+          pages: 5,
+          text: `--- RUJUKAN RESMI BMP UT MSIM4303 REKAYASA PERANGKAT LUNAK ---
+MODUL 1: Pengantar Software Engineering & Model Proses
+- Rekayasa Perangkat Lunak (RPL): Penerapan pendekatan sistematis, terdisiplin, dan terkuantifikasi atas pengembangan, pengoperasian, dan pemeliharaan perangkat lunak.
+- Model Proses: Waterfall Model, Prototyping, Spiral, Agile Development (Scrum/Kanban).
+
+MODUL 2: Analisis Kebutuhan Perangkat Lunak (Requirements Engineering)
+- Functional Requirements vs Non-Functional Requirements (Performa, Keamanan, Usability, Reliabilitas).
+- Teknik Pengumpulan Kebutuhan: Wawancara, Observasi, Kuesioner, Prototyping.
+
+MODUL 3: Pengujian Perangkat Lunak (Software Testing)
+- Black-Box Testing (Boundary Value Analysis, Equivalence Partitioning).
+- White-Box Testing (Cyclomatic Complexity, Path Testing).
+- Integration & Acceptance Testing (UAT).`,
+          active: true
+        };
+      } else if (presetType === 'UU_PDP') {
+        presetItem = {
+          id: 'preset_' + Date.now(),
+          name: 'Referensi UU No 27 Tahun 2022 - Pelindungan Data Pribadi (UU PDP).txt',
+          size: '22 KB',
+          type: 'REGULASI',
+          pages: 8,
+          text: `--- REFERENSI REGULASI HUKUM INDONESIA: UU NO. 27 TAHUN 2022 TENTANG PELINDUNGAN DATA PRIBADI ---
+Pasal 1: Data Pribadi adalah data tentang orang perseorangan yang teridentifikasi atau dapat diidentifikasi secara tersendiri atau dikombinasikan dengan informasi lainnya.
+Pasal 16: Pengendali Data Pribadi wajib memiliki dasar pemrosesan data pribadi (Persetujuan/Consent, Kewajiban Kontrak, Kewajiban Hukum).
+Pasal 35: Pengendali Data Pribadi wajib menjaga kerahasiaan Data Pribadi dan menerapkan enkripsi/keamanan siber yang memadai.
+Pasal 67: Sanksi Pidana atas pengumpulan dan penyalahgunaan data pribadi tanpa hak.`,
+          active: true
+        };
+      }
+
+      attachedModules.push(presetItem);
+      renderAttachedFilesList();
+      showToast(`Preset ${presetItem.name} ditambahkan!`);
+    }
+
+    function toggleModuleActive(id) {
+      const mod = attachedModules.find(m => m.id === id);
+      if (mod) {
+        mod.active = !mod.active;
+        renderAttachedFilesList();
+      }
+    }
+
+    function deleteModuleFile(id) {
+      attachedModules = attachedModules.filter(m => m.id !== id);
+      renderAttachedFilesList();
+      showToast('File pembantu dihapus.');
+    }
+
+    function clearAllModuleFiles() {
+      attachedModules = [];
+      renderAttachedFilesList();
+      showToast('Semua file pembantu dibersihkan.');
+    }
+
+    function previewFileText(id) {
+      const mod = attachedModules.find(m => m.id === id);
+      if (mod) {
+        document.getElementById('previewFileName').innerText = mod.name;
+        document.getElementById('previewFileContent').innerText = mod.text || "[Teks kosong]";
+        document.getElementById('filePreviewModal').classList.remove('hidden');
+      }
+    }
+
+    function closeFilePreviewModal() {
+      document.getElementById('filePreviewModal').classList.add('hidden');
+    }
+
+    function renderAttachedFilesList() {
+      const container = document.getElementById('attachedFilesList');
+      const activeCount = attachedModules.filter(m => m.active).length;
+      
+      document.getElementById('fileCountBadge').innerText = `${attachedModules.length} File`;
+      document.getElementById('moduleCountBadge').innerText = `${activeCount} File Aktif`;
+      document.getElementById('activeFilesBannerText').innerText = `${activeCount} File Modul Pembantu Terpasang & Aktif`;
+
+      if (attachedModules.length === 0) {
+        container.innerHTML = `
+          <div id="emptyFilesNotice" class="text-center py-8 bg-slate-50 border border-dashed border-slate-200 rounded-lg text-xs text-slate-400">
+            <i class="fa-solid fa-folder-open text-3xl mb-2 text-slate-300"></i>
+            <p>Belum ada file modul/pembantu yang diunggah.</p>
+            <p class="text-[11px] text-slate-400">Gunakan tombol unggah di atas atau pilih preset modul contoh.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = attachedModules.map(item => `
+        <div class="p-3 bg-white border ${item.active ? 'border-ut-blue/40 bg-blue-50/20' : 'border-slate-200 bg-slate-50'} rounded-lg flex items-center justify-between gap-3 text-xs transition">
+          <div class="flex items-center space-x-3 overflow-hidden flex-1">
+            <div class="w-8 h-8 rounded-lg ${item.active ? 'bg-ut-blue text-white' : 'bg-slate-200 text-slate-500'} flex items-center justify-center font-bold text-[10px] shrink-0">
+              ${item.type.substring(0, 3)}
+            </div>
+            <div class="truncate">
+              <p class="font-bold text-slate-800 truncate" title="${item.name}">${item.name}</p>
+              <p class="text-[10px] text-slate-500">${item.size} • ${item.pages} Halaman • ${item.text.length} Karakter</p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-1.5 shrink-0">
+            <button onclick="previewFileText('${item.id}')" class="p-1.5 text-slate-600 hover:text-ut-blue hover:bg-slate-100 rounded" title="Preview Teks"><i class="fa-solid fa-eye"></i></button>
+            <button onclick="toggleModuleActive('${item.id}')" class="px-2 py-1 text-[11px] font-bold rounded ${item.active ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-200 text-slate-600'}" title="Toggle Aktif/Nonaktif">
+              ${item.active ? 'Aktif' : 'Nonaktif'}
+            </button>
+            <button onclick="deleteModuleFile('${item.id}')" class="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded" title="Hapus"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    /* GEMINI API GENERATION LOGIC WITH MULTI-MODULE CONTEXT, HUMANIZER & CITATIONS */
+    async function generateAIResponse() {
+      const course = document.getElementById('sharedCourseInput').value.trim();
+      const isHumanizer = document.getElementById('humanizerToggle').checked;
+      const aiIntensity = document.getElementById('aiIntensitySelect').value;
+      const enrichment = document.getElementById('enrichmentSelect').value;
+      const includeBibliography = document.getElementById('includeBibliographyToggle').checked;
+
+      // Extract text from all active attached modules
+      const activeModules = attachedModules.filter(m => m.active);
+      let combinedModuleText = '';
+      if (activeModules.length > 0) {
+        combinedModuleText = activeModules.map((m, idx) => `=== FILE PEMBANTU ${idx + 1}: ${m.name} ===\n${m.text}`).join('\n\n');
+      }
+
+      if (!course) {
+        showToast('Harap isi Nama Mata Kuliah terlebih dahulu.', 'warning');
+        return;
+      }
+
+      let promptTaskDetails = '';
+
+      if (currentTab === 'discussion') {
+        const session = document.getElementById('discSessionSelect').value;
+        const discInput = document.getElementById('discTaskInput').value.trim();
+        if (!discInput) {
+          showToast('Harap masukkan soal/pertanyaan diskusi LMS.', 'warning');
+          return;
+        }
+
+        promptTaskDetails = `[JENIS: TANGGAPAN DISKUSI TUTON SESSION ${session}]\nSoal Diskusi:\n${discInput}`;
+
+      } else if (currentTab === 'task') {
+        const taskNum = document.getElementById('taskNumberSelect').value;
+        const taskFormat = document.getElementById('taskFormatSelect').value;
+        const taskInput = document.getElementById('taskInstructionsInput').value.trim();
+        if (!taskInput) {
+          showToast('Harap masukkan instruksi soal Tugas.', 'warning');
+          return;
+        }
+
+        promptTaskDetails = `[JENIS: PENGERJAAN TUGAS TUTON (${taskNum})]\nFormat Pengerjaan: ${taskFormat}\nInstruksi Soal:\n${taskInput}`;
+
+      } else if (currentTab === 'metopen') {
+        const topic = document.getElementById('metopenTopicInput').value.trim();
+        const section = document.getElementById('metopenSectionSelect').value;
+        const notes = document.getElementById('metopenNotesInput').value.trim();
+        if (!topic) {
+          showToast('Harap isi Judul/Topik Proposal Metopen.', 'warning');
+          return;
+        }
+
+        promptTaskDetails = `[JENIS: PROPOSAL METODE PENELITIAN SISTEM INFORMASI]\nTopik/Judul: ${topic}\nFokus Bagian: ${section}\nCatatan Tambahan: ${notes}`;
+      }
+
+      // BUILD SYSTEM INSTRUCTIONS, HUMANIZER & CITATION RULES
+      let systemInstruction = `Anda adalah seorang mahasiswa Program Studi S1 Sistem Informasi Universitas Terbuka (UT) bernama ${userProfile.name} (NIM: ${userProfile.nim}).
+Tugas Anda adalah menulis tanggapan akademik bermutu tinggi, ilmiah, dan alami untuk mata kuliah ${course}.
+
+INSTRUKSI UTAMA PENULISAN & MENGHINDARI DETEKSI AI (Target Skor Deteksi < 20%):
+1. Menggunakan sudut pandang ORANG PERTAMA secara konsisten ("saya", "menurut pemahaman saya terhadap Modul BMP", "berdasarkan analisis saya").
+2. HINDARI FRASA KLISE AI: Dilarang keras menggunakan frasa seperti: "Dalam era digitalisasi yang pesat", "Penting untuk dicatat bahwa", "Secara garis besar", "Sebagai kesimpulan", "Mari kita bahas", "Berikut adalah analisis komprehensif".
+3. VARIASI STRUKTUR KALIMAT (BURSTINESS): Gabungkan kalimat pendek tegas dengan kalimat majemuk akademis secara alami seperti gaya tulis tangan/pemikiran manusia.
+4. INTEGRASI CITASI & REFERENSI AKADEMIK IN-TEXT: Sertakan sitasi ilmiah di dalam paragraf pembahasan (seperti: "Menurut BMP MSIM4301 (Modul 3)...", "(UU No. 27 Tahun 2022)", "(Pressman & Maxim, 2020)").
+5. SAPAAN AWAL TUTON: Jika ini tanggapan Diskusi, awali dengan sapaan resmi Tuton UT: "Selamat Pagi/Siang Bapak/Ibu Tutor dan Rekan-rekan Mahasiswa,\nPerkenalkan nama saya ${userProfile.name} dengan NIM ${userProfile.nim}. Izin menyampaikan tanggapan untuk diskusi kali ini..."
+6. FORMAT BEBAS ASTERISK (*): DILARANG KERAS menggunakan karakter bintang (*) untuk poin maupun cetak tebal. Gunakan penomoran angka (1, 2, 3) atau huruf (a, b, c) untuk poin pembahasan agar tulisan bersih seperti ketikan makalah akademis resmi UT.`;
+
+      if (includeBibliography) {
+        systemInstruction += `\n6. DAFTAR PUSTAKA: Di akhir tulisan, wajib buatkan bagian "Daftar Pustaka" dengan format APA 7th Edition yang mencantumkan Buku Materi Pokok (BMP) UT terkait, file pembantu yang diunggah, dan regulasi/jurnal pendukung yang valid.`;
+      }
+
+      if (enrichment === 'bmp_uu') {
+        systemInstruction += `\n- Tambahkan referensi terkait UU ITE No. 1/2024 atau UU Pelindungan Data Pribadi (UU PDP No. 27/2022) Indonesia.`;
+      } else if (enrichment === 'bmp_studi_kasus') {
+        systemInstruction += `\n- Tambahkan studi kasus implementasi Sistem Informasi riil di industri IT Indonesia (misal: e-Commerce, BUMN, SIMRS, atau e-Government).`;
+      } else if (enrichment === 'bmp_iso') {
+        systemInstruction += `\n- Sertakan rujukan standar IT internasional seperti ISO/IEC 27001, COBIT 2019, atau IEEE Software Engineering Standard.`;
+      }
+
+      if (combinedModuleText) {
+        systemInstruction += `\n\n=== DOKUMEN & FILE PEMBANTU MODUL TERPASANG (${activeModules.length} FILE) ===\nWajib gunakan konsep, istilah, dan kutipan dari file berikut sebagai rujukan dasar:\n${combinedModuleText.substring(0, 6000)}`;
+      }
+
+      const fullPrompt = `${systemInstruction}\n\n--------------------\nDETAIL TUGAS MAHASISWA:\nMata Kuliah: ${course}\n${promptTaskDetails}\n\nHasilkan jawaban akademik terstruktur lengkap sekarang.`;
+
+      // DISPLAY LOADING STATE
+      const outputArea = document.getElementById('outputAnswerArea');
+      outputArea.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-16 space-y-3 font-sans">
+          <div class="w-10 h-10 border-4 border-ut-blue border-t-amber-400 rounded-full animate-spin"></div>
+          <p class="text-sm font-bold text-ut-navy animate-pulse">Menyusun Draf Jawaban dari ${activeModules.length} File Pembantu & Gemini AI...</p>
+          <p class="text-xs text-slate-500">Menerapkan Persona Mahasiswa Organik, Citasi APA & Anti-AI Detection Engine</p>
+        </div>
+      `;
+
+      const genBtn = document.getElementById('generateBtn');
+      genBtn.disabled = true;
+      genBtn.classList.add('opacity-75', 'cursor-not-allowed');
+
+      try {
+        const apiKey = localStorage.getItem('ut_gemini_api_key') || "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+        const payload = {
+          contents: [{ parts: [{ text: fullPrompt }] }]
+        };
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (generatedText) {
+          const formattedHtml = cleanAndFormatAcademicText(generatedText);
+          outputArea.innerHTML = formattedHtml;
+          
+          // Auto-save to draft history
+          saveDraftToHistory(course, currentTab, generatedText);
+          showToast('Draf jawaban & referensi berhasil dibuat!');
+        } else {
+          outputArea.innerHTML = `<div class="p-4 bg-red-50 text-red-700 rounded-lg text-sm">Gagal mendapatkan tanggapan dari Gemini API. Pastikan API Key Anda valid.</div>`;
+        }
+      } catch (err) {
+        console.error(err);
+        outputArea.innerHTML = `<div class="p-4 bg-red-50 text-red-700 rounded-lg text-sm">Terjadi kesalahan koneksi API: ${err.message}. Periksa API Key di menu atas.</div>`;
+      } finally {
+        genBtn.disabled = false;
+        genBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+      }
+    }
+
+    /* CLEAN & FORMAT ACADEMIC TEXT (REMOVES EXCESSIVE ASTERISKS) */
+    function cleanAndFormatAcademicText(rawText) {
+      if (!rawText) return '';
+
+      // 1. Convert markdown bold/italic asterisks *** / ** / * to clean HTML elements
+      let clean = rawText
+        .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+      // 2. Convert raw markdown bullet points starting with * or - into clean bullet points
+      clean = clean.replace(/^[\t ]*[\*\-][\t ]+/gm, '• ');
+
+      // 3. Remove any orphan/stray asterisks leftover in text
+      clean = clean.replace(/\*/g, '');
+
+      // 4. Split text into clean paragraphs and preserve line breaks
+      const paragraphs = clean.split(/\n\s*\n/);
+      return paragraphs.map(p => {
+        const formattedParagraph = p.trim().replace(/\n/g, '<br>');
+        return `<p class="mb-3.5 leading-relaxed text-slate-900">${formattedParagraph}</p>`;
+      }).join('');
+    }
+
+    /* AI DETECTION SCORE ANALYZER FUNCTION */
+    function analyzeAiDetection() {
+      const text = document.getElementById('outputAnswerArea').innerText;
+      if (!text || text.includes('Hasil draf jawaban terstruktur')) {
+        showToast('Belum ada teks jawaban untuk dianalisis.', 'warning');
+        return;
+      }
+
+      // Word & Paragraph metrics
+      const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+      const wordCount = words.length;
+      const paragraphCount = text.split(/\n\s*\n/).length;
+
+      // Detect First-Person POV
+      const firstPersonRegex = /\b(saya|pemahaman saya|analisis saya|menurut saya|pengalaman saya)\b/i;
+      const hasFirstPerson = firstPersonRegex.test(text);
+
+      // Detect Academic Citation Patterns
+      const citationRegex = /\b(BMP|Modul|202\d|201\d|UU No|Tahun|Halaman|hal\.|Daftar Pustaka)\b/i;
+      const hasCitation = citationRegex.test(text);
+
+      // Detect Cliche LLM phrases
+      const clicheRegex = /\b(era digitalisasi|sebagai kesimpulan|penting untuk dicatat|dalam konteks ini|secara komprehensif|berikut adalah)\b/gi;
+      const clicheMatches = text.match(clicheRegex) || [];
+
+      // Calculate estimated AI detection probability score
+      let score = 15; // baseline low human score
+      if (!hasFirstPerson) score += 20;
+      if (!hasCitation) score += 25;
+      score += (clicheMatches.length * 10);
+      if (wordCount < 100) score += 15;
+
+      score = Math.min(Math.max(score, 6), 88); // bound between 6% and 88%
+
+      // UI Updates
+      document.getElementById('aiScoreValue').innerText = `${score}%`;
+      document.getElementById('metricWordCount').innerText = `${wordCount} Kata / ${paragraphCount} Paragraf`;
+      document.getElementById('metricFirstPerson').innerText = hasFirstPerson ? "Tercakup (Gaya Organik)" : "Tidak Ada (Gaya Pasif/AI)";
+      document.getElementById('metricCitation').innerText = hasCitation ? "Terdeteksi (Lengkap)" : "Tidak Ada Citasi";
+      document.getElementById('metricCliche').innerText = `${clicheMatches.length} Frasa Terdeteksi`;
+
+      const badge = document.getElementById('aiScoreBadge');
+      if (score < 25) {
+        badge.className = "inline-block text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800";
+        badge.innerText = "Sangat Aman (Lolos AI Detector)";
+      } else if (score < 50) {
+        badge.className = "inline-block text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-800";
+        badge.innerText = "Sedang (Perlu Sedikit Variasi Kalimat)";
+      } else {
+        badge.className = "inline-block text-xs font-bold px-3 py-1 rounded-full bg-red-100 text-red-800";
+        badge.innerText = "Risiko Tinggi Deteksi AI";
+      }
+
+      document.getElementById('aiDetectorModal').classList.remove('hidden');
+    }
+
+    function closeAiDetectorModal() {
+      document.getElementById('aiDetectorModal').classList.add('hidden');
+    }
+
+    /* EXPORT & UTILITY FUNCTIONS */
+    function copyGeneratedText() {
+      const content = document.getElementById('outputAnswerArea').innerText;
+      if (!content || content.includes('Hasil draf jawaban terstruktur')) {
+        showToast('Belum ada teks jawaban untuk disalin.', 'warning');
+        return;
+      }
+      
+      const el = document.createElement('textarea');
+      el.value = content;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+
+      showToast('Teks jawaban berhasil disalin ke clipboard!');
+    }
+
+    function exportWord() {
+      const bjuContent = document.getElementById('bjuContainer').innerHTML;
+      if (bjuContent.includes('Hasil draf jawaban terstruktur')) {
+        showToast('Belum ada draf jawaban untuk diunduh.', 'warning');
+        return;
+      }
+
+      const html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'><title>Jawaban UT - ${userProfile.name}</title>
+        <style>
+          body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          td, th { border: 1px solid #003366; padding: 8px; text-align: left; }
+          .title { background-color: #003366; color: white; text-align: center; font-weight: bold; padding: 8px; }
+        </style>
+        </head>
+        <body>
+          ${bjuContent}
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Lembar_Jawaban_UT_${userProfile.name.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('Dokumen Word (.doc) berhasil diunduh!');
+    }
+
+    function printBju() {
+      window.print();
+    }
+
+    /* DRAFT HISTORY MANAGEMENT */
+    function saveDraftToHistory(course, tab, content) {
+      const newDraft = {
+        id: Date.now(),
+        date: new Date().toLocaleString('id-ID'),
+        course: course,
+        type: tab.toUpperCase(),
+        content: content
+      };
+      draftHistory.unshift(newDraft);
+      if (draftHistory.length > 20) draftHistory.pop();
+      localStorage.setItem('ut_draft_history', JSON.stringify(draftHistory));
+      updateHistoryBadge();
+    }
+
+    function saveCurrentDraftManually() {
+      const text = document.getElementById('outputAnswerArea').innerText;
+      const course = document.getElementById('sharedCourseInput').value;
+      if (!text || text.includes('Hasil draf jawaban terstruktur')) {
+        showToast('Tidak ada konten untuk disimpan.', 'warning');
+        return;
+      }
+      saveDraftToHistory(course, currentTab, text);
+      showToast('Draf disimpan ke Riwayat!');
+    }
+
+    function loadHistoryFromStorage() {
+      const saved = localStorage.getItem('ut_draft_history');
+      if (saved) {
+        try { draftHistory = JSON.parse(saved); } catch(e){}
+      }
+      updateHistoryBadge();
+    }
+
+    function updateHistoryBadge() {
+      document.getElementById('historyBadge').innerText = draftHistory.length;
+    }
+
+    function openHistoryModal() {
+      renderHistoryList();
+      document.getElementById('historyModal').classList.remove('hidden');
+    }
+
+    function closeHistoryModal() {
+      document.getElementById('historyModal').classList.add('hidden');
+    }
+
+    function renderHistoryList() {
+      const container = document.getElementById('historyListContainer');
+      if (draftHistory.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs">Belum ada riwayat draf tersimpan.</div>`;
+        return;
+      }
+
+      container.innerHTML = draftHistory.map(item => `
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg flex justify-between items-start gap-3 hover:border-ut-blue transition">
+          <div class="space-y-1 flex-1">
+            <div class="flex items-center gap-2">
+              <span class="bg-ut-blue text-white text-[10px] font-bold px-2 py-0.5 rounded">${item.type}</span>
+              <span class="text-xs font-bold text-slate-800">${item.course}</span>
+            </div>
+            <p class="text-[11px] text-slate-500"><i class="fa-regular fa-clock mr-1"></i> ${item.date}</p>
+            <p class="text-xs text-slate-600 line-clamp-2">${item.content.substring(0, 150)}...</p>
+          </div>
+          <div class="flex items-center space-x-1">
+            <button onclick="loadHistoryItem(${item.id})" class="p-1.5 text-xs bg-ut-blue text-white rounded hover:bg-ut-navy" title="Muat ke Canvas"><i class="fa-solid fa-arrow-right-to-bracket"></i></button>
+            <button onclick="deleteHistoryItem(${item.id})" class="p-1.5 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function loadHistoryItem(id) {
+      const item = draftHistory.find(d => d.id === id);
+      if (item) {
+        document.getElementById('outputAnswerArea').innerHTML = item.content.replace(/\n/g, '<br>');
+        document.getElementById('sharedCourseInput').value = item.course;
+        updateBjuHeader();
+        closeHistoryModal();
+        showToast('Draf dimuat ke lembar jawaban!');
+      }
+    }
+
+    function deleteHistoryItem(id) {
+      draftHistory = draftHistory.filter(d => d.id !== id);
+      localStorage.setItem('ut_draft_history', JSON.stringify(draftHistory));
+      updateHistoryBadge();
+      renderHistoryList();
+      showToast('Draf dihapus.');
+    }
+
+    function clearAllHistory() {
+      draftHistory = [];
+      localStorage.removeItem('ut_draft_history');
+      updateHistoryBadge();
+      renderHistoryList();
+      showToast('Semua riwayat dihapus.');
+    }
+
+    /* CUSTOM TOAST NOTIFICATIONS */
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      const bgClass = type === 'warning' ? 'bg-amber-600' : 'bg-slate-900';
+      toast.className = `${bgClass} text-white text-xs font-medium px-4 py-2.5 rounded-lg shadow-xl flex items-center gap-2 transition-all transform translate-y-2 opacity-0 pointer-events-auto border border-slate-700`;
+      toast.innerHTML = `<i class="fa-solid ${type === 'warning' ? 'fa-triangle-exclamation text-amber-300' : 'fa-circle-check text-emerald-400'}"></i> <span>${message}</span>`;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 50);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+  </script>
+
+</body>
+</html>
